@@ -10,13 +10,14 @@
 # install.packages("sentiment")
 # install.packages("Rstem")
 
-# library("twitteR")
-# library("plyr")
-# library("stringr")
-# library("tm")
-# library("sentiment")
-# library("Rstem")
-# library("lapply")
+library("twitteR")
+library("plyr")
+library("stringr")
+library("tm")
+library("sentiment")
+library("Rstem")
+library("RColorBrewer")
+library("wordcloud")
 
 ###############  Twitter Configurations #############
 
@@ -40,20 +41,67 @@ brazilWoeid = 23424768
 # what we want is just the column of the trend's names
 trends_list = as.list(getTrends(woeid = 23424768)[,'name'])
 
+
 # removing the hashtag from the word
-trends_list = lapply(trends, function(x) {
+trends_list = lapply(trends_list, function(x) {
   gsub("#","",x)
 })
 
 
-
-tweetsFromTrends = list()
-
-
 # get a hundred tweets from the trends
-lapply(trends_list , function(x){
-    tweetsFromTrends[[x]] <<- as.list(searchTwitter(x, n= 100,resultType="recent",locale = brazilWoeid))
+tweetsFromTrends = lapply(trends_list[1:5] , function(x){
+    as.list(searchTwitter(x, n= 5,resultType="recent",locale = brazilWoeid))
 })
+
+
+tweets = unlist(tweetsFromTrends)
+
+
+#creating a corpus object containing all the tweets
+tweetlist <- lapply(tweets, function(x){
+
+    gsub("[^[:graph:]]"," ",x$getText())
+    #iconv(x$getText(), to = "utf-8")
+  }
+)
+
+
+
+# tweetlist <- sapply(tweetlist, function(x) x$getText())
+corpus = Corpus(VectorSource(tweetlist))
+corpus = tm_map(corpus, function(x)removeWords(x, unlist(trends_list)))
+corpus = tm_map(corpus, function(x)removeWords(x, stopwords("portuguese")))
+#corpus <- tm_map(corpus,
+# content_transformer(function(x) iconv(x, to='UTF-8', sub='byte'))
+# )
+corpus = tm_map(corpus,stripWhitespace)
+corpus = tm_map(corpus, content_transformer(tolower))
+corpus = tm_map(corpus,removePunctuation)
+corpus = tm_map(corpus,removeNumbers)
+corpus <- Corpus(VectorSource(corpus))
+
+#converting corpus to a text
+#text  <- tm_map(corpus, PlainTextDocument)
+
+
+document <- TermDocumentMatrix(corpus)
+matrix <- as.matrix(matrix)
+v <- sort(rowSums(matrix),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+
+#findFreqTerms(document, lowfreq = 4)
+#findAssocs(document, terms = "brt", corlimit = 0.3)
+colors = brewer.pal(12,"RdYlGn")
+wordcloud(corpus,
+          scale = c(3,1),
+          random.order = F,
+          min.freq = 0,
+          colors = colors)
+
+# the most used words
+# barplot(d$freq[], las = 2, names.arg = d$word[],
+#         col ="red", main ="Most used words",
+#         ylab = "Frequencies")
 
 
 

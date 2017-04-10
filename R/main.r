@@ -7,14 +7,16 @@
 # install.packages("plyr")
 # install.packages("stringr")
 # install.packages("tm")
-# install.packages("sentiment")
+# install.packages("mscstexta4r")
 # install.packages("Rstem")
+
+
+#another excelent sentiment analytics package it is the syuzhet
 
 library("twitteR")
 library("plyr")
 library("stringr")
 library("tm")
-library("sentiment")
 library("Rstem")
 library("RColorBrewer")
 library("wordcloud")
@@ -50,7 +52,7 @@ trends_list = lapply(trends_list, function(x) {
 
 # get a hundred tweets from the trends
 tweetsFromTrends = lapply(trends_list[1:5] , function(x){
-    as.list(searchTwitter(x, n= 5,resultType="recent",locale = brazilWoeid))
+    as.list(searchTwitter(x, n= 50,resultType="recent",locale = brazilWoeid))
 })
 
 
@@ -91,19 +93,104 @@ d <- data.frame(word = names(v),freq=v)
 
 #findFreqTerms(document, lowfreq = 4)
 #findAssocs(document, terms = "brt", corlimit = 0.3)
-colors = brewer.pal(12,"RdYlGn")
-wordcloud(corpus,
-          scale = c(3,1),
-          random.order = F,
-          min.freq = 0,
-          colors = colors)
+# colors = brewer.pal(12,"RdYlGn")
+# wordcloud(corpus,
+#           scale = c(3,1),
+#           random.order = F,
+#           min.freq = 0,
+#           colors = colors)
 
 # the most used words
-# barplot(d$freq[], las = 2, names.arg = d$word[],
-#         col ="red", main ="Most used words",
-#         ylab = "Frequencies")
+barplot(d$freq[], las = 2, names.arg = d$word[],
+        col ="red", main ="Most used words",
+        ylab = "Frequencies")
 
 
+# findAssocs(document, 'sofá', 0.60)
+
+teste =  removeSparseTerms(document, sparse = 0.7)
+findFreqTerms(teste ,lowfreq = 0)
+findFreqTerms(document)
+portuguese_positive_words = readLines("words/positive-portuguese-words.txt")
+portuguese_negative_words = readLines("words/negative-portuguese-words.txt")
 
 
+words = d$word
+freq = d$freq
+positive_score = 0
+negative_score = 0
+i = 0
+for (word in words) {
 
+  pos_match = match(word,portuguese_positive_words)
+
+  if (!is.na(pos_match))
+  {
+    positive_score = positive_score + freq[i]
+  }
+  else
+  {
+    neg_match = match(word,portuguese_negative_words)
+    if(!is.na(neg_match))
+    {
+      negative_score = negative_score + freq[i]
+    }
+
+  }
+
+  i = i + 1
+}
+
+result = positive_score - negative_score
+positive_score
+negative_score
+result
+
+get_sentiment_dictionary(dictionary = "nrc")
+s_v <- get_sentences("i hate you!")
+raw_values <- get_sentiment(s_v, method = "syuzhet")
+dct_vals <- get_dct_transform(raw_values)
+plot(dct_vals, type="l", ylim=c(-0.1,.1))
+
+
+#microsoft text analytics api
+MSCS_TEXTANALYTICS_URL = "https://westus.api.cognitive.microsoft.com/texta/analytics/v2.0/"
+MSCS_TEXTANALYTICS_KEY = "1e36a52634a24d37b7042e98a206d57b"
+
+textaInit()
+
+
+teste = searchTwitter(searchString = "brasil",n = 25 , resultType = "recent",locale = brazilWoeid)
+tweets = sapply(teste, function(x) x$getText())
+
+docsLanguage <- rep("pt", length(testing[-33]))
+
+tryCatch({
+
+  # Perform sentiment analysis
+  resultados = textaSentiment(
+    documents = testing[-33],    # Input sentences or documents
+    languages = docsLanguage
+    # "en"(English, default)|"es"(Spanish)|"fr"(French)|"pt"(Portuguese)
+  )
+
+}, error = function(err) {
+
+  # Print error
+  geterrmessage()
+
+})
+
+testingvector = rnorm(49)
+trendsTweetsFrequencies = resultados[1]$results$score
+
+# boxplot(trendsTweetsFrequencies , outline = TRUE ,
+#         col = "blue" ,
+#         ylab = "Feeling index",
+#         xlab = "Topico Comentado"
+#         )
+
+testing = data.frame(v1 = testingvector, v2= trendsTweetsFrequencies)
+
+
+# boxplot(result)

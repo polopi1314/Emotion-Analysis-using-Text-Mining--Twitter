@@ -1,11 +1,7 @@
-Package: projeto1
+Package: emotion-algorithm
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Algorithms to analisy the currently emotions of the twitter users
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Author: Marco Cardoso
 Encoding: UTF-8
 LazyData: true
